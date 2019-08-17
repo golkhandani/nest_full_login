@@ -1,4 +1,4 @@
-import { User } from '../models/users.model';
+import { User } from '../../../shared/models/users.model';
 
 export class UserWithToken {
     user: User;

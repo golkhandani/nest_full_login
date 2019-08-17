@@ -1,6 +1,6 @@
 import { Module } from '@nestjs/common';
 import { MongooseModule } from '@nestjs/mongoose';
-import { UserSchema, UserModelName } from './models/users.model';
+import { UserSchema, UserModelName } from '../../shared/models/users.model';
 import { UsersController } from './users.controller';
 import { UsersProvider } from './users.provider';
 import { UserAlreadyExist } from './validators/userAlreadyExists';

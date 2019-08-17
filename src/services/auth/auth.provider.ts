@@ -1,22 +1,25 @@
 import { Injectable, HttpException, ForbiddenException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { TokenSubject } from './models/jwtPayload.model';
-import { UserBridgeModelName, UserBridge } from './models/userBridge.model';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
-import { User } from '../users/models/users.model';
+import { User, UserModelName } from '../../shared/models/users.model';
 import { RefreshTokenModelName, RefreshToken } from './models/refreshToken.model';
-import { jwtConstants } from './constants';
+import { jwtConstants, phoneConstants } from './constants';
 import * as moment from 'moment';
 import * as base64 from 'base-64';
 import { UserWithToken } from '../users/dto/userWithToken.dto';
 import { OS } from '../../shared/enums/os.enum';
 import { Google } from './helpers/googleAuth.helper';
+import { PhoneVerification, PhoneVerificationModelName } from './models/verificationCode.model';
+import { PhoneVerfication } from './helpers/phoneAuth.helper';
+import { VerificationCodeOutout } from './dto/verificationCode.dto';
 
 @Injectable()
 export class AuthProvider {
     constructor(
-        @InjectModel(UserBridgeModelName) private readonly UserBridgeModel: Model<UserBridge>,
+        @InjectModel(UserModelName) private readonly UserModel: Model<User>,
+        @InjectModel(PhoneVerificationModelName) private readonly PhoneVerificationModel: Model<PhoneVerification>,
         @InjectModel(RefreshTokenModelName) private readonly RefreshTokenModel: Model<RefreshToken>,
         private readonly jwtService: JwtService,
     ) { }
@@ -30,7 +33,7 @@ export class AuthProvider {
         // return null;
     }
     public async findUserForValidation(id) {
-        return await this.UserBridgeModel.findById(id);
+        return await this.UserModel.findById(id);
     }
     private async createRefreshToken(safeUser: User): Promise<string> {
         await this.RefreshTokenModel.deleteOne({ user: safeUser._id });
@@ -64,7 +67,7 @@ export class AuthProvider {
         if (!refreshTokenObj) {
             throw new ForbiddenException();
         }
-        const userObj: User = await this.UserBridgeModel.findById(refreshTokenObj.user) as User;
+        const userObj: User = await this.UserModel.findById(refreshTokenObj.user) as User;
         if (!userObj) {
             throw new HttpException('invalid token', 400);
         }
@@ -78,7 +81,7 @@ export class AuthProvider {
 
     //#region SIGN UP/IN
     public async signupByUserPass(userObj: any): Promise<UserWithToken> {
-        const newUser = new this.UserBridgeModel(userObj);
+        const newUser = new this.UserModel(userObj);
         const savedUser = await newUser.save() as User;
         const { user, refreshToken, accessToken } = await this.createTokenResponse(savedUser);
         return {
@@ -88,7 +91,7 @@ export class AuthProvider {
         };
     }
     public async signinByUserPass(username: string, password: string): Promise<UserWithToken> {
-        const userObj: User = await this.UserBridgeModel.findOne({ username }) as User;
+        const userObj: User = await this.UserModel.findOne({ username }) as User;
         if (!userObj) {
             throw new HttpException('user not found', 404);
         } else if (userObj.password !== password) {
@@ -105,7 +108,7 @@ export class AuthProvider {
     }
 
     public async signupByEmailPass(userObj: any): Promise<UserWithToken> {
-        const newUser = new this.UserBridgeModel(userObj);
+        const newUser = new this.UserModel(userObj);
         const savedUser = await newUser.save() as User;
         const { user, refreshToken, accessToken } = await this.createTokenResponse(savedUser);
         return {
@@ -115,7 +118,7 @@ export class AuthProvider {
         };
     }
     public async signinByEmailPass(email: string, password: string): Promise<UserWithToken> {
-        const userObj: User = await this.UserBridgeModel.findOne({ email }) as User;
+        const userObj: User = await this.UserModel.findOne({ email }) as User;
         if (!userObj) {
             throw new HttpException('user not found', 404);
         } else if (userObj.password !== password) {
@@ -130,6 +133,52 @@ export class AuthProvider {
             };
         }
     }
+    /**
+     * Step 1 / 4
+     * get phone number and create verfication code
+     * we will use verfication code to complete signup
+     * @param phone string
+     */
+    public async signinByPhoneNumber(phone: string): Promise<VerificationCodeOutout> {
+        const rm = await this.PhoneVerificationModel.findOneAndDelete({ phone });
+        const { code, codeLength } = PhoneVerfication.randomCode;
+        const expires = moment().add(phoneConstants.expirationInterval, 'minutes').toDate();
+        const newVerification = new this.PhoneVerificationModel({
+            code,
+            expires,
+            phone,
+        });
+        const savedVerification = await newVerification.save();
+        // TODO turned off for development
+        //  const sms = await PhoneVerfication.sendSmsByKavenegar(phone, code);
+        return {
+            codeLength,
+            expires,
+        };
+    }
+    public async signinByPhoneCode(phone: string, code: string): Promise<UserWithToken> {
+        const phoneVerfication = await this.PhoneVerificationModel
+            .findOne({ phone });
+        if (!phoneVerfication) {
+            throw new ForbiddenException();
+        } else if (moment(phoneVerfication.expires).isBefore(Date.now())) {
+            throw new HttpException('your code is expired try to send phone number again', 400);
+        } else if (phoneVerfication.code === code) {
+            const rm = await this.PhoneVerificationModel.findOneAndDelete({ phone });
+            const newUser = new this.UserModel({
+                phone,
+            });
+            const savedUser = await newUser.save() as User;
+            const { user, refreshToken, accessToken } = await this.createTokenResponse(savedUser);
+            return {
+                user,
+                refreshToken,
+                accessToken,
+            };
+        } else {
+            throw new HttpException('invalid code', 400);
+        }
+    }
 
     public async signinByGoogle(
         googleAccessToken: string,
@@ -141,7 +190,7 @@ export class AuthProvider {
 
         // google account is found Or not so
         if (googleUser) {
-            const existsUser = await this.UserBridgeModel.findOne({
+            const existsUser = await this.UserModel.findOne({
                 $or: [
                     { google: googleUser.google },
                     { gmail: googleUser.google },
@@ -157,7 +206,7 @@ export class AuthProvider {
             const userWithGoogle = existsUser && existsUser.google === googleUser.google;
             const userWithVerifiedGmail = existsUser && existsUser.email === googleUser.google && existsUser.email_verified;
             if (!existsUser) {
-                const newUser = new this.UserBridgeModel(googleUser);
+                const newUser = new this.UserModel(googleUser);
                 const savedUser = await newUser.save() as User;
                 const { user, refreshToken, accessToken } = await this.createTokenResponse(savedUser);
                 return {

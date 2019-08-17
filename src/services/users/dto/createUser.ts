@@ -1,4 +1,4 @@
-import { ValidationArguments, Validate, Length, IsAlpha, NotEquals, IsNotEmpty, IsDefined, IsEmail } from 'class-validator';
+import { ValidationArguments, Validate, Length, IsAlpha, NotEquals, IsNotEmpty, IsDefined, IsEmail, IsPhoneNumber } from 'class-validator';
 import { UserAlreadyExist } from '../validators/userAlreadyExists';
 
 export class CreateByUsername {
@@ -52,4 +52,29 @@ export class CreateByEmail {
     })
     @IsDefined()
     readonly password: string;
+}
+
+// tslint:disable-next-line: max-classes-per-file
+export class CreateByPhoneNumber {
+    @IsPhoneNumber('IR')
+    @NotEquals('test')
+    @Validate(UserAlreadyExist, {
+        message: 'user exists',
+    })
+    @IsDefined()
+    readonly phone: string;
+}
+// tslint:disable-next-line: max-classes-per-file
+export class CreateByPhoneCode {
+    @IsPhoneNumber('IR')
+    @NotEquals('test')
+    @Validate(UserAlreadyExist, {
+        message: 'user exists',
+    })
+    @IsDefined()
+    readonly phone: string;
+
+    @IsNotEmpty()
+    @IsDefined()
+    readonly code: string;
 }

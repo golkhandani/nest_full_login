@@ -3,7 +3,7 @@ import { PassportStrategy } from '@nestjs/passport';
 import { Injectable, HttpException, NotFoundException } from '@nestjs/common';
 import { jwtConstants } from '../constants';
 import { JwtPayload, TokenSubject } from '../models/jwtPayload.model';
-import { User } from 'src/services/users/models/users.model';
+import { User } from 'src/shared/models/users.model';
 import { AuthProvider } from '../auth.provider';
 
 @Injectable()

@@ -18,12 +18,17 @@ export const UserSchema = new mongoose.Schema({
     email: String,
     email_verified: Boolean,
 
+    /** Login 4 => phone */
+    phone: String,
     /** Profile */
     name: String,
     picture: String,
 
     /** Access */
-    role: String,
+    role: {
+        type: String,
+        default: UserRole.USER,
+    },
 }, {
         timestamps: true,
     });
@@ -37,6 +42,8 @@ export interface User extends mongoose.Document {
 
     readonly email: string;
     readonly email_verified: boolean;
+
+    readonly phone: string;
 
     readonly name: string;
     readonly picture: string;

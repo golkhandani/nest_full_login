@@ -1,7 +1,7 @@
 import { Controller, Get, Request, Headers, Post, Body, Query, UseGuards, SetMetadata } from '@nestjs/common';
 import { UsersProvider } from './users.provider';
-import { CreateByUsername, CreateByEmail } from './dto/createUser';
-import { User, UserRole } from './models/users.model';
+import { CreateByUsername, CreateByEmail, CreateByPhoneCode, CreateByPhoneNumber } from './dto/createUser';
+import { User, UserRole } from '../../shared/models/users.model';
 import { ParseLimitPipe } from '../../shared/pipes/limit.pipe';
 import { ParseOffsetPipe } from '../../shared/pipes/offset.pipe';
 import { Roles, RoleGuard } from '../../shared/guards/roles.guard';
@@ -10,17 +10,20 @@ import { AuthProvider } from '../auth/auth.provider';
 import { UserReq } from '../../shared/decorators/user.decorator';
 import { UserWithToken } from './dto/userWithToken.dto';
 import { OS } from '../../shared/enums/os.enum';
+import { VerificationCodeOutout } from '../auth/dto/verificationCode.dto';
 
 export const signinTypes = {
   up: 'username-password',
+  ep: 'email-password',
   go: 'google',
-  ph: 'phone',
+  pc: 'phone-code',
 };
 
 @Controller('users')
-@UseGuards(RoleGuard)
+
 export class UsersController {
   @Get('ping')
+  @UseGuards(RoleGuard)
   // @Roles(UserRole.USER)
   getPing(
     @Request() req,
@@ -31,6 +34,7 @@ export class UsersController {
     };
   }
   @Post('ping')
+  @UseGuards(RoleGuard)
   postPing(
     @Request() req,
     @UserReq() user): any {
@@ -43,6 +47,7 @@ export class UsersController {
     private readonly usersProvider: UsersProvider,
     private readonly authProvider: AuthProvider) { }
 
+  //#region USERNAME/PASSWORD
   @Post('signup/username')
   async createUserByUsername(@Body() user: CreateByUsername): Promise<UserWithToken> {
     return await this.authProvider.signupByUserPass(user);
@@ -53,7 +58,8 @@ export class UsersController {
     @Body('password') password): Promise<UserWithToken> {
     return await this.authProvider.signinByUserPass(username, password);
   }
-
+  //#endregion
+  //#region EMAIL/PASSWORD
   @Post('signup/email')
   async createUserByEmail(@Body() user: CreateByEmail): Promise<UserWithToken> {
     return await this.authProvider.signupByEmailPass(user);
@@ -64,7 +70,19 @@ export class UsersController {
     @Body('password') password): Promise<UserWithToken> {
     return await this.authProvider.signinByEmailPass(email, password);
   }
-
+  //#endregion
+  //#region PHONE/CODE
+  @Post('signup/phone')
+  async getPhoneSendCode(@Body() body: CreateByPhoneNumber): Promise<VerificationCodeOutout> {
+    return await this.authProvider.signinByPhoneNumber(body.phone);
+  }
+  @Post('signin/phone')
+  async get(
+    @Body() body: CreateByPhoneCode): Promise<UserWithToken> {
+    return await this.authProvider.signinByPhoneCode(body.phone, body.code);
+  }
+  //#endregion
+  //#region GOOGLE
   @Post('signin/google')
   async createGoogleUser(
     @Body('gat') googleAccessToken: string,
@@ -72,6 +90,7 @@ export class UsersController {
   ): Promise<UserWithToken> {
     return await this.authProvider.signinByGoogle(googleAccessToken, devicePlatform);
   }
+  //#endregion
 
   @Post('refresh')
   async refresh(
