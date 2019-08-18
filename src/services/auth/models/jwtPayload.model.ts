@@ -5,6 +5,8 @@ export interface JwtPayload {
     iat?: number;
     exp?: number;
     jti?: string;
+    iss?: string;
+    aud?: string;
 }
 
 export class TokenSubject {

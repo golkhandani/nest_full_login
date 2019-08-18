@@ -18,8 +18,7 @@ import { UserModelName, UserSchema } from '../../shared/models/users.model';
         MongooseModule.forFeature([{ name: PhoneVerificationModelName, schema: PhoneVerificationSchema }]),
         PassportModule,
         JwtModule.register({
-            secret: jwtConstants.secret,
-            signOptions: { expiresIn: '60s' },
+            secret: jwtConstants.private_key,
         }),
     ],
     providers: [AuthProvider, LocalStrategy, JwtStrategy],

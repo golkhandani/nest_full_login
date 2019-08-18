@@ -24,6 +24,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
      * @param payload JwtPayload
      */
     async validate(payload: JwtPayload) {
+        console.log(payload);
         const unlocked = TokenSubject.unlock(payload.sub) as User;
         if (this.blocked.includes(unlocked._id)) {
             return new HttpException('you are blocked', 403);

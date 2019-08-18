@@ -47,18 +47,26 @@ export class AuthProvider {
         await newRefreshToken.save();
         return token;
     }
+    private createAccessToken(payload) {
+        return this.jwtService.sign(payload, {
+            subject: TokenSubject.lock(payload),
+            algorithm: jwtConstants.algorithm,
+            issuer: 'auth.com',
+            audience: 'service.com',
+            expiresIn: jwtConstants.expiresIn,
+
+        });
+    }
     private async createTokenResponse(userObj: User) {
         const user = {
             _id: userObj._id,
-            username: userObj.username,
-            name: userObj.name,
-            email: userObj.email,
+            // username: userObj.username,
+            // name: userObj.name,
+            // email: userObj.email,
             role: userObj.role || 'ADMIN',
         } as User;
-        const payload = {
-            sub: TokenSubject.lock(user),
-        };
-        const accessToken = this.jwtService.sign(payload);
+        const payload = user;
+        const accessToken = this.createAccessToken(payload);
         const refreshToken = await this.createRefreshToken(user);
         return { user, refreshToken, accessToken };
     }
