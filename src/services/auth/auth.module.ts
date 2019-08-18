@@ -7,7 +7,7 @@ import { JwtModule } from '@nestjs/jwt';
 import { jwtConstants } from './constants';
 import { MongooseModule } from '@nestjs/mongoose';
 import { RefreshTokenModelName, RefreshTokenSchema } from './models/refreshToken.model';
-import { PhoneVerificationModelName, PhoneVerificationSchema } from './models/verificationCode.model';
+import { PhoneVerificationModelName, PhoneVerificationSchema } from './models/phoneVerification.model';
 import { UserModelName, UserSchema } from '../../shared/models/users.model';
 
 @Module({

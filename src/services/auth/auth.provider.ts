@@ -11,7 +11,7 @@ import * as base64 from 'base-64';
 import { UserWithToken } from '../users/dto/userWithToken.dto';
 import { OS } from '../../shared/enums/os.enum';
 import { Google } from './helpers/googleAuth.helper';
-import { PhoneVerification, PhoneVerificationModelName } from './models/verificationCode.model';
+import { PhoneVerification, PhoneVerificationModelName } from './models/phoneVerification.model';
 import { PhoneVerfication } from './helpers/phoneAuth.helper';
 import { VerificationCodeOutout } from './dto/verificationCode.dto';
 
@@ -68,7 +68,8 @@ export class AuthProvider {
         const payload = user;
         const accessToken = this.createAccessToken(payload);
         const refreshToken = await this.createRefreshToken(user);
-        return { user, refreshToken, accessToken };
+        const tokenType = 'Bearer';
+        return { user, tokenType, refreshToken, accessToken };
     }
     public async refreshAccessToken(oldRefreshToken: string): Promise<any> {
         const refreshTokenObj = await this.RefreshTokenModel.findOne({ token: oldRefreshToken });
@@ -79,24 +80,14 @@ export class AuthProvider {
         if (!userObj) {
             throw new HttpException('invalid token', 400);
         }
-        const { user, refreshToken, accessToken } = await this.createTokenResponse(userObj);
-        return {
-            user,
-            refreshToken,
-            accessToken,
-        };
+        return await this.createTokenResponse(userObj);
     }
 
     //#region SIGN UP/IN
     public async signupByUserPass(userObj: any): Promise<UserWithToken> {
         const newUser = new this.UserModel(userObj);
         const savedUser = await newUser.save() as User;
-        const { user, refreshToken, accessToken } = await this.createTokenResponse(savedUser);
-        return {
-            user,
-            refreshToken,
-            accessToken,
-        };
+        return await this.createTokenResponse(savedUser);
     }
     public async signinByUserPass(username: string, password: string): Promise<UserWithToken> {
         const userObj: User = await this.UserModel.findOne({ username }) as User;
@@ -105,25 +96,14 @@ export class AuthProvider {
         } else if (userObj.password !== password) {
             throw new HttpException('invalid password', 400);
         } else {
-
-            const { user, refreshToken, accessToken } = await this.createTokenResponse(userObj);
-            return {
-                user,
-                refreshToken,
-                accessToken,
-            };
+            return await this.createTokenResponse(userObj);
         }
     }
 
     public async signupByEmailPass(userObj: any): Promise<UserWithToken> {
         const newUser = new this.UserModel(userObj);
         const savedUser = await newUser.save() as User;
-        const { user, refreshToken, accessToken } = await this.createTokenResponse(savedUser);
-        return {
-            user,
-            refreshToken,
-            accessToken,
-        };
+        return await this.createTokenResponse(savedUser);
     }
     public async signinByEmailPass(email: string, password: string): Promise<UserWithToken> {
         const userObj: User = await this.UserModel.findOne({ email }) as User;
@@ -132,13 +112,7 @@ export class AuthProvider {
         } else if (userObj.password !== password) {
             throw new HttpException('invalid password', 400);
         } else {
-
-            const { user, refreshToken, accessToken } = await this.createTokenResponse(userObj);
-            return {
-                user,
-                refreshToken,
-                accessToken,
-            };
+            return await this.createTokenResponse(userObj);
         }
     }
     /**
@@ -149,12 +123,13 @@ export class AuthProvider {
      */
     public async signinByPhoneNumber(phone: string): Promise<VerificationCodeOutout> {
         const rm = await this.PhoneVerificationModel.findOneAndDelete({ phone });
-        const { code, codeLength } = PhoneVerfication.randomCode;
+        const { code, codeLength, codeType } = PhoneVerfication.randomCode;
         const expires = moment().add(phoneConstants.expirationInterval, 'minutes').toDate();
         const newVerification = new this.PhoneVerificationModel({
             code,
             expires,
             phone,
+            codeType,
         });
         const savedVerification = await newVerification.save();
         // TODO turned off for development
