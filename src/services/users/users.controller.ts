@@ -1,4 +1,6 @@
-import { Controller, Get, Request, Headers, Post, Body, Query, UseGuards, SetMetadata } from '@nestjs/common';
+import { Controller, Get, Request, Headers, Post, Body, Query, UseGuards, SetMetadata, Put } from '@nestjs/common';
+import { FileInterceptor, MulterModule, MulterModuleOptions, MulterModuleAsyncOptions } from '@nestjs/platform-express';
+
 import { UsersProvider } from './users.provider';
 import { CreateByUsername, CreateByEmail, CreateByPhoneCode, CreateByPhoneNumber } from './dto/createUser';
 import { User, UserRole } from '../../shared/models/users.model';
@@ -99,16 +101,16 @@ export class UsersController {
     return await this.authProvider.refreshAccessToken(refreshToken);
   }
 
-  @Get()
+  // profile section //
+  @Get('me')
   async findAllUsers(
     @Query('limit', new ParseLimitPipe()) limit,
     @Query('offset', new ParseOffsetPipe()) offset,
   ): Promise<User[]> {
     return await this.usersProvider.findAllUsers(limit, offset);
   }
-  @UseGuards(AuthGuard('jwt'))
-  @Get('me')
-  getProfile(@Request() req) {
+  @Put('me')
+  putProfile(@Request() req) {
     return req.user;
   }
 
