@@ -7,7 +7,7 @@ import { JwtModule } from '@nestjs/jwt';
 import { jwtConstants } from './constants';
 import { MongooseModule } from '@nestjs/mongoose';
 import { RefreshTokenModelName, RefreshTokenSchema } from './models/refreshToken.model';
-import { PhoneVerificationModelName, PhoneVerificationSchema } from './models/verificationCode.model';
+import { PhoneVerificationModelName, PhoneVerificationSchema } from './models/phoneVerification.model';
 import { UserModelName, UserSchema } from '../../shared/models/users.model';
 
 @Module({
@@ -18,8 +18,7 @@ import { UserModelName, UserSchema } from '../../shared/models/users.model';
         MongooseModule.forFeature([{ name: PhoneVerificationModelName, schema: PhoneVerificationSchema }]),
         PassportModule,
         JwtModule.register({
-            secret: jwtConstants.secret,
-            signOptions: { expiresIn: '60s' },
+            secret: jwtConstants.private_key,
         }),
     ],
     providers: [AuthProvider, LocalStrategy, JwtStrategy],

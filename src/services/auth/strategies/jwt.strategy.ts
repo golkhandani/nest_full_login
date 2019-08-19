@@ -13,7 +13,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
         super({
             jwtFromRequest: ExtractJwt.fromAuthHeaderWithScheme('Bearer'),
             ignoreExpiration: true,
-            secretOrKey: jwtConstants.secret,
+            secretOrKey: jwtConstants.public_key,
         });
     }
 
@@ -24,12 +24,15 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
      * @param payload JwtPayload
      */
     async validate(payload: JwtPayload) {
-        const unlocked = TokenSubject.unlock(payload.sub) as User;
-        if (this.blocked.includes(unlocked._id)) {
+        console.log(payload);
+        // const unlocked = TokenSubject.unlock(payload.sub) as User;
+        if (this.blocked.includes(payload._id)) {
             return new HttpException('you are blocked', 403);
         }
-        const user = await this.authProvider.findUserForValidation(unlocked._id);
+        const user = await this.authProvider.findUserForValidation(payload._id);
+        console.log('HOW', user);
         if (!user) {
+            console.log('HOW');
             throw new NotFoundException();
         } else { return TokenSubject.unlock(payload.sub); }
     }

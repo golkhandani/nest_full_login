@@ -1,5 +1,8 @@
 import { KavenegarSMS, KavenegarSmsType } from './kavenegarSms.helper';
-
+export enum CodeType {
+    NUMBER = 'NUMBER',
+    STRING = 'STRING',
+}
 export class PhoneVerfication {
     public static get randomCode() {
         const high = 9999;
@@ -7,8 +10,9 @@ export class PhoneVerfication {
         let code = '1111';
         code = (Math.floor(Math.random() * (high - low) + low)).toString();
         return {
-            codeLength: code.toString().length,
             code,
+            codeLength: code.toString().length,
+            codeType: CodeType.NUMBER,
         };
     }
 

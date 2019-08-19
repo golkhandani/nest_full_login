@@ -1,10 +1,13 @@
 import * as base64 from 'base-64';
 import { NotImplementedException, HttpException } from '@nestjs/common';
-export interface JwtPayload {
+import { User } from '../../../shared/models/users.model';
+export interface JwtPayload extends User {
     sub: string;
     iat?: number;
     exp?: number;
     jti?: string;
+    iss?: string;
+    aud?: string;
 }
 
 export class TokenSubject {

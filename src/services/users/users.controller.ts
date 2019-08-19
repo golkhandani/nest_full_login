@@ -36,6 +36,7 @@ export class UsersController {
     };
   }
   @Post('ping')
+  @Roles(UserRole.USER)
   @UseGuards(RoleGuard)
   postPing(
     @Request() req,

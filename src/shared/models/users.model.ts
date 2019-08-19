@@ -31,6 +31,9 @@ export const UserSchema = new mongoose.Schema({
     },
 }, {
         timestamps: true,
+        autoIndex: true,
+        id: true,
+        _id: true,
     });
 
 export interface User extends mongoose.Document {
