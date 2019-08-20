@@ -2,7 +2,7 @@ import { Model } from 'mongoose';
 import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { UserModelName, User } from '../../shared/models/users.model';
-import { CreateByUsername } from './dto/createUser';
+import { CreateByUsername } from './dto/createUserByUsername';
 
 @Injectable()
 export class UsersProvider {

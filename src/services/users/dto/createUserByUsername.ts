@@ -1,5 +1,6 @@
-import { ValidationArguments, Validate, Length, IsAlpha, NotEquals, IsNotEmpty, IsDefined, IsEmail, IsPhoneNumber } from 'class-validator';
+import { ValidationArguments, Validate, Length, IsAlpha, NotEquals, IsNotEmpty, IsDefined, IsEmail, IsPhoneNumber, ValidateIf, ValidationError } from 'class-validator';
 import { UserAlreadyExist } from '../validators/userAlreadyExists';
+import { HttpException, HttpStatus } from '@nestjs/common';
 
 export class CreateByUsername {
     @IsAlpha()
@@ -24,7 +25,15 @@ export class CreateByUsername {
         },
     })
     @IsDefined()
-    readonly password: string;
+    public password: string;
+    @ValidateIf((o, value) => {
+        if ((o as CreateByUsername).password === value) {
+            return true;
+        } else {
+            throw new HttpException('passwords dont match', HttpStatus.BAD_REQUEST);
+        }
+    })
+    readonly reEnteredPassword: string;
 }
 
 // tslint:disable-next-line: max-classes-per-file

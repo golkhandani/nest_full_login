@@ -1,6 +1,6 @@
 import { Controller, Get, Request, Headers, Post, Body, Query, UseGuards, SetMetadata } from '@nestjs/common';
 import { UsersProvider } from './users.provider';
-import { CreateByUsername, CreateByEmail, CreateByPhoneCode, CreateByPhoneNumber } from './dto/createUser';
+import { CreateByUsername, CreateByEmail, CreateByPhoneCode, CreateByPhoneNumber } from './dto/createUserByUsername';
 import { User, UserRole } from '../../shared/models/users.model';
 import { ParseLimitPipe } from '../../shared/pipes/limit.pipe';
 import { ParseOffsetPipe } from '../../shared/pipes/offset.pipe';
