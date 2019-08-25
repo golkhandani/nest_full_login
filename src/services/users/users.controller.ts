@@ -1,13 +1,12 @@
-import { Controller, Get, Request, Headers, Post, Body, Query, UseGuards, SetMetadata } from '@nestjs/common';
+import { Controller, Get, Request, Headers, Post, Body, Query, UseGuards, SetMetadata, Header } from '@nestjs/common';
 import { UsersProvider } from './users.provider';
 import { CreateByUsername, CreateByEmail, CreateByPhoneCode, CreateByPhoneNumber } from './dto/createUserByUsername';
 import { User, UserRole } from '../../shared/models/users.model';
 import { ParseLimitPipe } from '../../shared/pipes/limit.pipe';
 import { ParseOffsetPipe } from '../../shared/pipes/offset.pipe';
 import { Roles, RoleGuard } from '../../shared/guards/roles.guard';
-import { AuthGuard } from '@nestjs/passport';
 import { AuthProvider } from '../auth/auth.provider';
-import { UserReq } from '../../shared/decorators/user.decorator';
+import { UserFromHeader } from '../../shared/decorators/user.decorator';
 import { UserWithToken } from './dto/userWithToken.dto';
 import { OS } from '../../shared/enums/os.enum';
 import { VerificationCodeOutout } from '../auth/dto/verificationCode.dto';
@@ -24,10 +23,10 @@ export const signinTypes = {
 export class UsersController {
   @Get('ping')
   @UseGuards(RoleGuard)
-  // @Roles(UserRole.USER)
+  @Roles(UserRole.USER, UserRole.GUEST)
   getPing(
     @Request() req,
-    @UserReq() user): any {
+    @UserFromHeader() user): any {
     return {
       authorization: req.headers.authorization,
       user,
@@ -38,7 +37,7 @@ export class UsersController {
   @UseGuards(RoleGuard)
   postPing(
     @Request() req,
-    @UserReq() user): any {
+    @UserFromHeader() user): any {
     return {
       authorization: req.headers.authorization,
       user,
@@ -48,7 +47,14 @@ export class UsersController {
     private readonly usersProvider: UsersProvider,
     private readonly authProvider: AuthProvider) { }
 
+  //#region Guest
+  @Post('signin/guest')
+  async createGuestUser(@Headers() headers: any): Promise<UserWithToken> {
+    return await this.authProvider.signAsGuest(headers);
+  }
+  //#endregion
   //#region USERNAME/PASSWORD
+
   @Post('signup/username')
   async createUserByUsername(@Body() user: CreateByUsername): Promise<UserWithToken> {
     return await this.authProvider.signupByUserPass(user);
@@ -107,10 +113,12 @@ export class UsersController {
   ): Promise<User[]> {
     return await this.usersProvider.findAllUsers(limit, offset);
   }
-  @UseGuards(AuthGuard('jwt'))
+
+  @UseGuards(RoleGuard)
+  @Roles(UserRole.USER, UserRole.GUEST)
   @Get('me')
-  getProfile(@Request() req) {
-    return req.user;
+  async getProfile(@UserFromHeader() user) {
+    return await this.usersProvider.findUserById((user as User)._id);
   }
 
 }

@@ -4,6 +4,7 @@ import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { UsersModule } from './services/users/users.module';
 import { AuthModule } from './services/auth/auth.module';
+import { UsersProfileModule } from './services/profiles/profiles.modules';
 
 @Module({
   imports: [
@@ -12,6 +13,7 @@ import { AuthModule } from './services/auth/auth.module';
       useNewUrlParser: true,
     }),
     UsersModule,
+    UsersProfileModule,
   ],
   controllers: [AppController],
   providers: [AppService],

@@ -3,7 +3,7 @@ import { JwtService } from '@nestjs/jwt';
 import { TokenSubject, JwtPayload } from './models/jwtPayload.model';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
-import { User, UserModelName } from '../../shared/models/users.model';
+import { User, UserModelName, UserRole } from '../../shared/models/users.model';
 import { RefreshTokenModelName, RefreshToken } from './models/refreshToken.model';
 import { jwtConstants, phoneConstants, bcryptConstants } from './constants';
 import * as moment from 'moment';
@@ -14,7 +14,7 @@ import { Google } from './helpers/googleAuth.helper';
 import { PhoneVerification, PhoneVerificationModelName } from './models/phoneVerification.model';
 import { PhoneVerfication } from './helpers/phoneAuth.helper';
 import { VerificationCodeOutout } from './dto/verificationCode.dto';
-import { CreateByUsername } from '../users/dto/createUserByUsername';
+import { CreateByUsername, CreateGuestUser } from '../users/dto/createUserByUsername';
 import { hashSync, genSaltSync, compareSync } from 'bcrypt';
 
 @Injectable()
@@ -54,7 +54,7 @@ export class AuthProvider {
     private async createTokenResponse(userObj: User): Promise<UserWithToken> {
         const user = {
             _id: userObj._id,
-            role: userObj.role || 'ADMIN',
+            role: userObj.role || UserRole.GUEST,
         } as User;
         const payload = user;
         const accessToken = this.createAccessToken(payload);
@@ -88,6 +88,23 @@ export class AuthProvider {
         return hashed;
     }
     //#region SIGN UP/IN
+    public async signAsGuest(headers: any): Promise<UserWithToken> {
+        // TODO : change the way you get real fingerprint
+        const fingerprint: string = headers.fingerprint || base64.encode(JSON.stringify(headers));
+        const existsUser: User = await this.UserModel.findOne({ fingerprint });
+        if (!existsUser) {
+            const userObj = {
+                fingerprint,
+                role: UserRole.GUEST,
+            };
+            const newUser = new this.UserModel(userObj);
+            const savedUser = await newUser.save() as User;
+            return await this.createTokenResponse(savedUser);
+        } else {
+            return await this.createTokenResponse(existsUser);
+        }
+    }
+
     public async signupByUserPass(userObj: CreateByUsername): Promise<UserWithToken> {
         userObj.password = this.generatedHashPassword(userObj.password);
         const newUser = new this.UserModel(userObj);

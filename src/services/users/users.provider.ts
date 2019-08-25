@@ -10,12 +10,11 @@ export class UsersProvider {
 
     }
     //#region BASIC CRUD FUNCTIONS
-    async createUserByUsername(user: CreateByUsername): Promise<User> {
-        const newUser = new this.UserModel(user);
-        return await newUser.save();
-    }
     async findAllUsers(limit = 10, offset = 0): Promise<User[]> {
         return await this.UserModel.find().limit(limit).skip(offset);
+    }
+    async findUserById(id) {
+        return await this.UserModel.findById(id);
     }
     //#endregion
 

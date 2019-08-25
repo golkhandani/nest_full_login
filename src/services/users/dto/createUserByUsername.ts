@@ -1,7 +1,17 @@
-import { ValidationArguments, Validate, Length, IsAlpha, NotEquals, IsNotEmpty, IsDefined, IsEmail, IsPhoneNumber, ValidateIf, ValidationError } from 'class-validator';
+// tslint:disable-next-line: max-line-length
+import { ValidationArguments, Validate, Length, IsAlpha, NotEquals, IsNotEmpty, IsDefined, IsEmail, IsPhoneNumber, ValidateIf, IsAlphanumeric } from 'class-validator';
 import { UserAlreadyExist } from '../validators/userAlreadyExists';
 import { HttpException, HttpStatus } from '@nestjs/common';
 
+export class CreateGuestUser {
+    @IsAlphanumeric()
+    @NotEquals('test')
+    @IsDefined()
+    readonly fingerprint: string;
+
+}
+
+// tslint:disable-next-line: max-classes-per-file
 export class CreateByUsername {
     @IsAlpha()
     @NotEquals('test')

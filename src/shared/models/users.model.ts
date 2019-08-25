@@ -3,6 +3,7 @@ import * as mongoose from 'mongoose';
 export const UserModelName = 'User';
 
 export enum UserRole {
+    GUEST = 'GUEST',
     USER = 'USER',
     ADMIN = 'ADMIN',
     GOD = 'GOD',
@@ -18,6 +19,8 @@ export const UserSchema = new mongoose.Schema({
     email: String,
     email_verified: Boolean,
 
+    /** Guest login */
+    fingerprint: String,
     /** Login 4 => phone */
     phone: String,
     /** Profile */
@@ -45,6 +48,8 @@ export interface User extends mongoose.Document {
 
     readonly email: string;
     readonly email_verified: boolean;
+
+    readonly fingerprint: string;
 
     readonly phone: string;
 

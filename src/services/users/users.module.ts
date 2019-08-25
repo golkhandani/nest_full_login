@@ -6,7 +6,6 @@ import { UsersProvider } from './users.provider';
 import { UserAlreadyExist } from './validators/userAlreadyExists';
 import { AuthModule } from '../auth/auth.module';
 import { APP_GUARD } from '@nestjs/core';
-import { RolesGuard } from '../../shared/guards/roles.guard';
 
 @Module({
   imports: [
