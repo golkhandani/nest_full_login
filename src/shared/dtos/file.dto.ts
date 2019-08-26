@@ -1,4 +1,4 @@
-class MulterFile {
+export class MulterFile {
     fieldname: string;
     originalname: string;
     encoding: string;

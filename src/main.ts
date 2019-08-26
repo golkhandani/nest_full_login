@@ -8,6 +8,6 @@ async function bootstrap() {
 
   useContainer(app.select(AppModule), { fallbackOnErrors: true });
   app.useGlobalPipes(new ValidationPipe());
-  await app.listen(3080);
+  await app.listen(3000);
 }
 bootstrap();
