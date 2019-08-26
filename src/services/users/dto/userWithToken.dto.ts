@@ -4,4 +4,5 @@ export class UserWithToken {
     user: User;
     refreshToken: string;
     accessToken: string;
+    tokenType: string;
 }

@@ -1,11 +1,11 @@
 import { Injectable, HttpException, ForbiddenException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
-import { TokenSubject } from './models/jwtPayload.model';
+import { TokenSubject, JwtPayload } from './models/jwtPayload.model';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
-import { User, UserModelName } from '../../shared/models/users.model';
+import { User, UserModelName, UserRole } from '../../shared/models/users.model';
 import { RefreshTokenModelName, RefreshToken } from './models/refreshToken.model';
-import { jwtConstants, phoneConstants } from './constants';
+import { jwtConstants, phoneConstants, bcryptConstants } from './constants';
 import * as moment from 'moment';
 import * as base64 from 'base-64';
 import { UserWithToken } from '../users/dto/userWithToken.dto';
@@ -14,6 +14,8 @@ import { Google } from './helpers/googleAuth.helper';
 import { PhoneVerification, PhoneVerificationModelName } from './models/phoneVerification.model';
 import { PhoneVerfication } from './helpers/phoneAuth.helper';
 import { VerificationCodeOutout } from './dto/verificationCode.dto';
+import { CreateByUsername, CreateGuestUser } from '../users/dto/createUserByUsername';
+import { hashSync, genSaltSync, compareSync } from 'bcrypt';
 
 @Injectable()
 export class AuthProvider {
@@ -24,15 +26,7 @@ export class AuthProvider {
         private readonly jwtService: JwtService,
     ) { }
 
-    public async validateUser(username: string, pass: string): Promise<any> {
-        // const user = await this.usersProvider.findByUsernameForValidation(username);
-        // if (user && user.password === pass) {
-        //     const { password, ...result } = user;
-        //     return result;
-        // }
-        // return null;
-    }
-    public async findUserForValidation(id) {
+    public async findUserForValidation(id: string): Promise<User> {
         return await this.UserModel.findById(id);
     }
     private async createRefreshToken(safeUser: User): Promise<string> {
@@ -47,7 +41,7 @@ export class AuthProvider {
         await newRefreshToken.save();
         return token;
     }
-    private createAccessToken(payload) {
+    private createAccessToken(payload: User): string {
         return this.jwtService.sign(payload, {
             subject: TokenSubject.lock(payload),
             algorithm: jwtConstants.algorithm,
@@ -57,19 +51,26 @@ export class AuthProvider {
 
         });
     }
-    private async createTokenResponse(userObj: User) {
+    private async createTokenResponse(userObj: User): Promise<UserWithToken> {
         const user = {
             _id: userObj._id,
-            // username: userObj.username,
-            // name: userObj.name,
-            // email: userObj.email,
-            role: userObj.role || 'ADMIN',
+            role: userObj.role || UserRole.GUEST,
         } as User;
         const payload = user;
         const accessToken = this.createAccessToken(payload);
         const refreshToken = await this.createRefreshToken(user);
         const tokenType = 'Bearer';
         return { user, tokenType, refreshToken, accessToken };
+    }
+    private async validatedUser(userObj: User, password: string) {
+
+        if (!userObj) {
+            throw new HttpException('user not found', 404);
+        } else if (!compareSync(password, userObj.password)) {
+            throw new HttpException('invalid password', 400);
+        } else {
+            return await this.createTokenResponse(userObj);
+        }
     }
     public async refreshAccessToken(oldRefreshToken: string): Promise<any> {
         const refreshTokenObj = await this.RefreshTokenModel.findOne({ token: oldRefreshToken });
@@ -82,38 +83,49 @@ export class AuthProvider {
         }
         return await this.createTokenResponse(userObj);
     }
-
+    private generatedHashPassword(password: string): string {
+        const salt = genSaltSync(bcryptConstants.saltRounds);
+        const hashed = hashSync(password, salt);
+        return hashed;
+    }
     //#region SIGN UP/IN
-    public async signupByUserPass(userObj: any): Promise<UserWithToken> {
+    public async signAsGuest(headers: any): Promise<UserWithToken> {
+        // TODO : change the way you get real fingerprint
+        const fingerprint: string = headers.fingerprint || base64.encode(JSON.stringify(headers));
+        const existsUser: User = await this.UserModel.findOne({ fingerprint });
+        if (!existsUser) {
+            const userObj = {
+                fingerprint,
+                role: UserRole.GUEST,
+            };
+            const newUser = new this.UserModel(userObj);
+            const savedUser = await newUser.save() as User;
+            return await this.createTokenResponse(savedUser);
+        } else {
+            return await this.createTokenResponse(existsUser);
+        }
+    }
+
+    public async signupByUserPass(userObj: CreateByUsername): Promise<UserWithToken> {
+        userObj.password = this.generatedHashPassword(userObj.password);
         const newUser = new this.UserModel(userObj);
         const savedUser = await newUser.save() as User;
         return await this.createTokenResponse(savedUser);
     }
     public async signinByUserPass(username: string, password: string): Promise<UserWithToken> {
         const userObj: User = await this.UserModel.findOne({ username }) as User;
-        if (!userObj) {
-            throw new HttpException('user not found', 404);
-        } else if (userObj.password !== password) {
-            throw new HttpException('invalid password', 400);
-        } else {
-            return await this.createTokenResponse(userObj);
-        }
+        return this.validatedUser(userObj, password);
     }
 
     public async signupByEmailPass(userObj: any): Promise<UserWithToken> {
+        userObj.password = this.generatedHashPassword(userObj.password);
         const newUser = new this.UserModel(userObj);
         const savedUser = await newUser.save() as User;
         return await this.createTokenResponse(savedUser);
     }
     public async signinByEmailPass(email: string, password: string): Promise<UserWithToken> {
         const userObj: User = await this.UserModel.findOne({ email }) as User;
-        if (!userObj) {
-            throw new HttpException('user not found', 404);
-        } else if (userObj.password !== password) {
-            throw new HttpException('invalid password', 400);
-        } else {
-            return await this.createTokenResponse(userObj);
-        }
+        return this.validatedUser(userObj, password);
     }
     /**
      * Step 1 / 4
@@ -133,8 +145,9 @@ export class AuthProvider {
         });
         const savedVerification = await newVerification.save();
         // TODO turned off for development
-        //  const sms = await PhoneVerfication.sendSmsByKavenegar(phone, code);
+        // const sms = await PhoneVerfication.sendSmsByKavenegar(phone, code);
         return {
+            codeType,
             codeLength,
             expires,
         };
@@ -152,12 +165,8 @@ export class AuthProvider {
                 phone,
             });
             const savedUser = await newUser.save() as User;
-            const { user, refreshToken, accessToken } = await this.createTokenResponse(savedUser);
-            return {
-                user,
-                refreshToken,
-                accessToken,
-            };
+            return await this.createTokenResponse(savedUser);
+
         } else {
             throw new HttpException('invalid code', 400);
         }
@@ -191,27 +200,12 @@ export class AuthProvider {
             if (!existsUser) {
                 const newUser = new this.UserModel(googleUser);
                 const savedUser = await newUser.save() as User;
-                const { user, refreshToken, accessToken } = await this.createTokenResponse(savedUser);
-                return {
-                    user,
-                    refreshToken,
-                    accessToken,
-                };
+                return await this.createTokenResponse(savedUser);
 
             } else if (userWithGoogle) {
-                const { user, refreshToken, accessToken } = await this.createTokenResponse(existsUser);
-                return {
-                    user,
-                    refreshToken,
-                    accessToken,
-                };
+                return await this.createTokenResponse(existsUser);
             } else if (userWithVerifiedGmail) {
-                const { user, refreshToken, accessToken } = await this.createTokenResponse(existsUser);
-                return {
-                    user,
-                    refreshToken,
-                    accessToken,
-                };
+                return await this.createTokenResponse(existsUser);
             } else {
                 throw new HttpException(`
                 gmail already exist but not verified plz verify it first

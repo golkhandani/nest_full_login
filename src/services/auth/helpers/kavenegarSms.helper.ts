@@ -4,7 +4,7 @@ import { kavenegarConstants } from '../constants';
 
 export enum KavenegarSmsType {
     SENDER = 'SENDER',
-    TEMPLATE = 'T,EMPLATE',
+    TEMPLATE = 'TEMPLATE',
 }
 export class KavenegarSMS {
     private kavenegar: any;

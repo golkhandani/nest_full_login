@@ -19,6 +19,9 @@ LG4uhe/uxu3y5lvRNm8LPgR+T8Ng2wIgLD+vR3PJUayny5FWwfRb6au4X8y8iYvp
 rX9oKG5xCeufYov05gmA3IrJOyZItPoLLmrQXw==
 -----END RSA PRIVATE KEY-----`,
 };
+export const bcryptConstants = {
+    saltRounds: 10,
+};
 export const phoneConstants = {
     expirationInterval: 15, // min
 };
@@ -28,3 +31,4 @@ export const kavenegarConstants = {
     sender: 100400,
     template: 'voices-verification',
 };
+
