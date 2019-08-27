@@ -9,7 +9,7 @@ import { UsersProfileModule } from './services/profiles/profiles.modules';
 @Module({
   imports: [
     AuthModule,
-    MongooseModule.forRoot('mongodb://pyd-admin-123:pyd-password-123@localhost:27027/voices?authSource=admin', {
+    MongooseModule.forRoot('mongodb://admin:password@localhost:27027/test?authSource=admin', {
       useNewUrlParser: true,
     }),
     UsersModule,
