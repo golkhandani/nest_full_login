@@ -2,17 +2,17 @@
 import { Controller, Get, Put, Request, Headers, Post, Body, Query, UseGuards, SetMetadata, UseInterceptors, UploadedFile } from '@nestjs/common';
 import { FileInterceptor, MulterModule, MulterModuleOptions, MulterModuleAsyncOptions } from '@nestjs/platform-express';
 
-import { ParseLimitPipe } from '../../shared/pipes/limit.pipe';
-import { ParseOffsetPipe } from '../../shared/pipes/offset.pipe';
-import { Roles, RoleGuard } from '../../shared/guards/roles.guard';
-import { UserFromHeader } from '../../shared/decorators/user.decorator';
+import { ParseLimitPipe } from '@shared/pipes/limit.pipe';
+import { ParseOffsetPipe } from '@shared/pipes/offset.pipe';
+import { Roles, RoleGuard } from '@shared/guards/roles.guard';
+import { UserFromHeader } from '@shared/decorators/user.decorator';
 
-import { User, UserRole } from '../../shared/models/users.model';
+import { User, UserRole } from '@shared/models/users.model';
 import { UsersProfileProvider } from './profiles.provider';
-import { fsMakeDirIfNotExists } from '../../shared/helpers/fs.helper';
+import { fsMakeDirIfNotExists } from '@shared/helpers/fs.helper';
 
-import * as multer from 'multer'
-import { MulterFile } from '../../shared/dtos/file.dto';
+import * as multer from 'multer';
+import { MulterFile } from '@shared/dtos/file.dto';
 
 const temp_folder: string = `./temp/users/pictures`;
 const storage = multer.diskStorage({

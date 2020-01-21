@@ -1,6 +1,6 @@
 import * as axios from 'axios';
-import { OS } from '../../../shared/enums/os.enum';
-import { User } from '../../../shared/models/users.model';
+import { OS } from '@shared/enums/os.enum';
+import { User } from '@shared/models/users.model';
 
 export interface GoogleUser {
     sub: string;

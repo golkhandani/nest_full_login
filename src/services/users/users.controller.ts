@@ -1,14 +1,14 @@
 import { Controller, Get, Request, Headers, Post, Body, Query, UseGuards, SetMetadata, Header } from '@nestjs/common';
 import { UsersProvider } from './users.provider';
 import { CreateByUsername, CreateByEmail, CreateByPhoneCode, CreateByPhoneNumber } from './dto/createUserByUsername';
-import { User, UserRole } from '../../shared/models/users.model';
-import { ParseLimitPipe } from '../../shared/pipes/limit.pipe';
-import { ParseOffsetPipe } from '../../shared/pipes/offset.pipe';
-import { Roles, RoleGuard } from '../../shared/guards/roles.guard';
+import { User, UserRole } from '@shared/models/users.model';
+import { ParseLimitPipe } from '@shared/pipes/limit.pipe';
+import { ParseOffsetPipe } from '@shared/pipes/offset.pipe';
+import { Roles, RoleGuard } from '@shared/guards/roles.guard';
 import { AuthProvider } from '../auth/auth.provider';
-import { UserFromHeader } from '../../shared/decorators/user.decorator';
+import { UserFromHeader } from '@shared/decorators/user.decorator';
 import { UserWithToken } from './dto/userWithToken.dto';
-import { OS } from '../../shared/enums/os.enum';
+import { OS } from '@shared/enums/os.enum';
 import { VerificationCodeOutout } from '../auth/dto/verificationCode.dto';
 
 export const signinTypes = {
